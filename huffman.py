@@ -59,13 +59,15 @@ def encode_data(data, codes):
 def decode_data(encoded_data, root):
         codes = generate_codes(root)
         decoded_data = ''
+        start = 0
         for i in range(1, len(encoded_data)+1):
-                if encoded_data[:i] in codes.values():
+                if encoded_data[start:i] in codes.values():
                         for key, value in codes.items():
-                                if value == encoded_data[:i]:
+                                if value == encoded_data[start:i]:
                                         decoded_data += key
                                         break
-                        encoded_data = encoded_data[i:]
+                        start = i
+                        i += 1
         return decoded_data
 
 def compress(filepath):
@@ -75,6 +77,7 @@ def compress(filepath):
         frequency = calculate_frequency(data)
         root = build_huffman_tree(frequency)
         codes = generate_codes(root)
+        print("Huffman codes: ", codes)
         encoded_data = encode_data(data, codes)
 
         with open(filepath+'.huff', 'wb') as f:
