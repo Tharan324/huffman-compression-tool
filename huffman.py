@@ -40,14 +40,14 @@ def build_huffman_tree(frequency):
 
 def generate_codes(root):
         codes = {}
-        generate_codes_helper(root, '', codes)
+        generate_code_helper(root, '', codes)
         return codes
 
 def generate_code_helper(node, code, codes):
         if node is None:
                 return
-        generate_codes_helper(root.left, code + '0', codes)
-        generate_codes_helper(root.right, code + '1', codes)
+        generate_code_helper(node.left, code + '0', codes)
+        generate_code_helper(node.right, code + '1', codes)
         codes[node.char] = code
 
 def encode_data(data, codes):
@@ -55,6 +55,18 @@ def encode_data(data, codes):
         for char in data:
                 encoded_data += codes[char]
         return encoded_data
+
+def decode_data(encoded_data, root):
+        codes = generate_codes(root)
+        decoded_data = ''
+        for i in range(1, len(encoded_data)+1):
+                if encoded_data[:i] in codes.values():
+                        for key, value in codes.items():
+                                if value == encoded_data[:i]:
+                                        decoded_data += key
+                                        break
+                        encoded_data = encoded_data[i:]
+        return decoded_data
 
 def compress(filepath):
         with open(filepath, 'r') as f:
@@ -71,14 +83,20 @@ def compress(filepath):
         print("Compressed file is saved at: ", filepath+'.huff')
 
 def decompress(filepath):
-        #with open(filepath, 'rb') as f:
-        #        root, encoded_data = pickle.load(f)
-        pass
+        with open(filepath, 'rb') as f:
+                root, encoded_data = pickle.load(f)
+        
+        decoded_data = decode_data(encoded_data, root)
+        
+        with open(filepath[:-5], 'w') as f:
+                f.write(decoded_data)
+
+        print("Decompressed file is saved at: ", filepath[:-5])
 
 if __name__ == "__main__":
-        # ./huffman.py compress/decompress <src_filepath> <dest_filepath>
-        if len(sys.argv) != 4:
-                print("Usage: ./huffman.py compress/decompress <src_filepath> <dest_filepath>")
+        # ./huffman.py compress/decompress <src_filepath>
+        if len(sys.argv) != 3:
+                print("Usage: ./huffman.py compress/decompress <filename>")
                 sys.exit(1)
         if sys.argv[1] != 'compress' and sys.argv[1] != 'decompress':
                 print("Invalid operation. Use compress/decompress")
@@ -86,21 +104,13 @@ if __name__ == "__main__":
                 
         operation = sys.argv[1]
         src_filepath = sys.argv[2]
-        dest_filepath = sys.argv[3]
 
-        if src_filepath == dest_filepath:
-                print("Source and destination files cannot be same")
-                sys.exit(1)
-        elif os.path.exists(src_filepath) == False:
+        if os.path.exists(src_filepath) == False:
                 print("Source file does not exist")
                 sys.exit(1)
 
         if operation == 'compress':
-                compress(src_filepath)
-                print("Compressed file is saved at: ", dest_filepath)
+                compress(src_filepath)      
         elif operation == 'decompress':
-                pass
-                # call decompress function
-                # print("Decompressed file is saved at: ", dest_filepath)
+                decompress(src_filepath)
                
-                
