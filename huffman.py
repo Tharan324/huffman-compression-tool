@@ -54,7 +54,18 @@ def encode_data(data, codes):
         encoded_data = ''
         for char in data:
                 encoded_data += codes[char]
-        return encoded_data
+        
+        b = bytearray()
+        padding = 8 - len(encoded_data) % 8
+
+        first_byte = (padding & 0b111) << 5  # Shift padding to the top 3 bits
+        first_byte |= int(encoded_data[:5], 2)  # Pack the next 5 bits
+        b.append(first_byte)
+
+        for i in range(5, len(encoded_data), 8):
+                b.append(int(encoded_data[i:i+8], 2))
+        
+        return b
 
 def decode_data(encoded_data, root):
         codes = generate_codes(root)
@@ -80,10 +91,13 @@ def compress(filepath):
         print("Huffman codes: ", codes)
         encoded_data = encode_data(data, codes)
 
+        # pickle dump needs to be changed
+        # the root should not be shared, instead give the codes in binary format
         with open(filepath+'.huff', 'wb') as f:
                 pickle.dump((root, encoded_data), f)
 
         print("Compressed file is saved at: ", filepath+'.huff')
+        print("Compression ratio: ", os.path.getsize(filepath)/os.path.getsize(filepath+'.huff'))
 
 def decompress(filepath):
         with open(filepath, 'rb') as f:
