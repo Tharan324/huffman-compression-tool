@@ -38,17 +38,29 @@ def build_huffman_tree(frequency):
         # return the only remaining root of the tree
         return heap[0]
 
-def generate_codes(root):
-        codes = {}
-        generate_code_helper(root, '', codes)
+def generate_codes(node, current_code="", codes=None):
+        if codes is None:
+                codes = {}
+        
+        # Base Case - Leaf Node
+        if node.char is not None:  # Only assign code if the node has a character
+                codes[node.char] = current_code
+                return
+        
+        # Recursive Case - Traverse Left and Right
+        if node.left:  # Check if left exists
+                generate_codes(node.left, current_code + "0", codes)
+        if node.right:  # Check if right exists
+                generate_codes(node.right, current_code + "1", codes)
+        
         return codes
 
-def generate_code_helper(node, code, codes):
-        if node is None:
-                return
-        generate_code_helper(node.left, code + '0', codes)
-        generate_code_helper(node.right, code + '1', codes)
-        codes[node.char] = code
+def compress_codes(codes):
+        b = bytearray()
+        for char, code in codes.items():
+                b.append(ord(char))
+                b.append(int(code, 2))
+        return b
 
 def encode_data(data, codes):
         encoded_data = ''
@@ -88,13 +100,14 @@ def compress(filepath):
         frequency = calculate_frequency(data)
         root = build_huffman_tree(frequency)
         codes = generate_codes(root)
+        compressed_codes = compress_codes(codes)
         print("Huffman codes: ", codes)
         encoded_data = encode_data(data, codes)
 
         # pickle dump needs to be changed
         # the root should not be shared, instead give the codes in binary format
         with open(filepath+'.huff', 'wb') as f:
-                pickle.dump((root, encoded_data), f)
+                pickle.dump((compressed_codes, encoded_data), f)
 
         print("Compressed file is saved at: ", filepath+'.huff')
         print("Compression ratio: ", os.path.getsize(filepath)/os.path.getsize(filepath+'.huff'))
